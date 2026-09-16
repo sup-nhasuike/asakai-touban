@@ -1,8 +1,10 @@
 {
 	"name": "asakai-touban",
+	"main": "./src/worker.js",
 	"compatibility_date": "2026-09-16",
 	"assets": {
-		"directory": "./",
+		"directory": "./public/",
+		"binding": "ASSETS",
 		"not_found_handling": "404-page"
 	}
 }
