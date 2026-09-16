@@ -39,15 +39,23 @@
   button.danger{background:#fdecec; color:var(--danger);}
   button.danger:hover{background:#fbdada; color:var(--danger-dark);}
   table{width:100%; border-collapse:collapse; font-size:13px;}
+  /* スマホ幅では列が狭くなりすぎるので、表だけ横スクロールできるようにする */
+  .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:8px;}
+  .table-scroll table{min-width:520px;}
+  @media (max-width:480px){
+    body{padding:12px;}
+    .card{padding:12px;}
+  }
   th,td{padding:6px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle;}
   th{color:var(--sub); font-weight:600; font-size:12px;}
   .member-row input{width:100%;}
-  #memberTable{table-layout:fixed;}
+  #memberTable{table-layout:fixed; min-width:460px;}
   #memberTable td, #memberTable th{overflow:hidden;}
   #memberTable input{text-overflow:ellipsis;}
   .small-btn{padding:4px 8px; font-size:12px;}
   .muted{color:var(--sub); font-size:12px;}
   #scheduleTable tr{cursor:grab;}
+  #scheduleTable{table-layout:fixed;}
   #scheduleTable tr.dragging{opacity:.4;}
   #scheduleTable tr.dragover{background:var(--hover);}
   .badge{display:inline-block; font-size:11px; padding:1px 6px; border-radius:10px; margin-left:6px;}
@@ -81,6 +89,19 @@
 
 <div class="note-box">
   ※ 担当者一覧はサンプルの架空データです。実際に使う際は氏名・メールアドレスなどの個人情報の取り扱いにご注意のうえ、ご自身の組織の情報に置き換えてください。このファイルはブラウザ内（localStorage）にのみデータを保存し、外部には送信されません。
+</div>
+
+<div class="card">
+  <h2>設定の共有</h2>
+  <p class="muted">
+    このindex.htmlファイル自体には、今の担当者一覧やスケジュールは含まれていません（保存先はブラウザ内のみです）。<br>
+    他のPCに今の設定・スケジュールをそのまま引き継ぐには、いったんファイルに保存し、相手のPCで index.html を開いた上でそのファイルを読み込んでください。
+  </p>
+  <div class="row">
+    <button class="secondary small-btn" id="exportBtn">今の設定をファイルに保存</button>
+    <button class="secondary small-btn" id="importBtn">ファイルから設定を読み込む</button>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+  </div>
 </div>
 
 <div class="layout">
@@ -117,16 +138,18 @@
 
     <div class="card">
       <h2>担当者一覧（<span id="memberCount">0</span>名）</h2>
-      <table id="memberTable">
-        <thead><tr>
-          <th style="width:28px;">No.</th>
-          <th style="width:34%;">氏名</th>
-          <th style="width:17%;">メールアドレス</th>
-          <th>割当日</th>
-          <th style="width:44px;"></th>
-        </tr></thead>
-        <tbody id="memberTbody"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="memberTable">
+          <thead><tr>
+            <th style="width:28px;">No.</th>
+            <th style="width:34%;">氏名</th>
+            <th style="width:17%;">メールアドレス</th>
+            <th>割当日</th>
+            <th style="width:44px;"></th>
+          </tr></thead>
+          <tbody id="memberTbody"></tbody>
+        </table>
+      </div>
       <div class="add-form">
         <div class="field"><label>氏名</label><input type="text" id="newMemberName" placeholder="例）新規 太郎"></div>
         <div class="field"><label>メールアドレス</label><input type="email" id="newMemberEmail" placeholder="例）example@example.com"></div>
@@ -137,10 +160,12 @@
     <div class="card">
       <h2>朝会中止設定</h2>
       <p class="muted">お盆・GW・年末年始など、期間を指定して朝会を中止できます。設定すると以降の担当日程が自動で先送りされます。</p>
-      <table>
-        <thead><tr><th>開始日</th><th>終了日</th><th>理由</th><th></th></tr></thead>
-        <tbody id="cancelTbody"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>開始日</th><th>終了日</th><th>理由</th><th></th></tr></thead>
+          <tbody id="cancelTbody"></tbody>
+        </table>
+      </div>
       <div class="add-form">
         <div class="field"><label>開始日</label><input type="date" id="newCancelStart"></div>
         <div class="field"><label>終了日</label><input type="date" id="newCancelEnd"></div>
@@ -176,10 +201,19 @@
         <button class="secondary small-btn" id="copyChatBtn">Google Chat用テキストをコピー</button>
         <span class="muted">「【ローテーション】」＋「M/D(曜) @氏名 さん」の形式でコピーします（中止回は含みません）</span>
       </div>
-      <table id="scheduleTable">
-        <thead><tr><th style="width:24px;"></th><th>日付</th><th>担当者</th><th style="width:56px;">回数</th><th>メールアドレス</th><th></th></tr></thead>
-        <tbody id="scheduleTbody"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="scheduleTable">
+          <thead><tr>
+            <th style="width:24px;"></th>
+            <th style="width:110px;">日付</th>
+            <th style="width:130px;">担当者</th>
+            <th style="width:56px;">回数</th>
+            <th>メールアドレス</th>
+            <th style="width:100px;"></th>
+          </tr></thead>
+          <tbody id="scheduleTbody"></tbody>
+        </table>
+      </div>
       <div id="scheduleEmpty" class="empty" style="display:none;">まだスケジュールがありません。左の「スケジュールを生成／再生成」を押してください。</div>
     </div>
   </div>
@@ -370,19 +404,27 @@ function defaultState(){
 
 let state = load();
 
+// 旧バージョン（中止回を別枠のskippedWeeksで管理していた形式）や、
+// 他のPCから読み込んだエクスポートファイルの形式ゆれを補正する
+function normalizeState(parsed){
+  if(!parsed || !Array.isArray(parsed.members) || !parsed.members.length){
+    throw new Error('invalid state: members is required');
+  }
+  if(!Array.isArray(parsed.assignments)) parsed.assignments = [];
+  parsed.assignments.forEach(a => { if(!a.type) a.type = 'active'; });
+  if(!Array.isArray(parsed.cancelRanges)) parsed.cancelRanges = [];
+  if(!Array.isArray(parsed.customHolidays)) parsed.customHolidays = [];
+  if(!parsed.baseDate) parsed.baseDate = defaultState().baseDate;
+  if(!parsed.startMemberId) parsed.startMemberId = parsed.members[0].id;
+  delete parsed.skippedWeeks;
+  return parsed;
+}
+
 function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    if(!parsed.members || !parsed.members.length) return defaultState();
-    // 旧バージョン（中止回を別枠のskippedWeeksで管理していた形式）からの読み込み互換
-    if(!Array.isArray(parsed.assignments)) parsed.assignments = [];
-    parsed.assignments.forEach(a => { if(!a.type) a.type = 'active'; });
-    if(!Array.isArray(parsed.cancelRanges)) parsed.cancelRanges = [];
-    if(!Array.isArray(parsed.customHolidays)) parsed.customHolidays = [];
-    delete parsed.skippedWeeks;
-    return parsed;
+    return normalizeState(JSON.parse(raw));
   }catch(e){
     return defaultState();
   }
@@ -1000,6 +1042,43 @@ document.getElementById('deleteMemberNoShift').addEventListener('click', () => {
 document.getElementById('copyChatBtn').addEventListener('click', () => {
   if(!activeSlots().length){ alert('コピーできるスケジュールがありません。'); return; }
   copyTextToClipboard(buildChatRotationText());
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `asakai_touban_${state.baseDate}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('importFileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  e.target.value = ''; // 同じファイルを連続で選び直せるようにリセット
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = normalizeState(JSON.parse(reader.result));
+      if(!confirm('今のブラウザに保存されている設定を、読み込んだファイルの内容で上書きします。よろしいですか？')) return;
+      state = parsed;
+      save();
+      renderAll();
+      alert('設定を読み込みました。');
+    }catch(err){
+      alert('ファイルの読み込みに失敗しました。「今の設定をファイルに保存」で書き出したファイルか確認してください。');
+    }
+  };
+  reader.readAsText(file);
 });
 
 /* ---------- 初期化 ---------- */
