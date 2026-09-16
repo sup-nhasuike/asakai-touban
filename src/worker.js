@@ -32,10 +32,14 @@ export default {
 		if (separatorIndex === -1) {
 			return unauthorized();
 		}
-		const user = decoded.slice(0, separatorIndex);
-		const password = decoded.slice(separatorIndex + 1);
+		const user = decoded.slice(0, separatorIndex).trim();
+		const password = decoded.slice(separatorIndex + 1).trim();
 
-		if (!constantTimeEqual(user, expectedUser) || !constantTimeEqual(password, expectedPassword)) {
+		// iOSのSafari等、認証ポップアップのユーザー名欄が自動で先頭を大文字にする場合があるため、
+		// ユーザー名は大文字小文字を区別しない（パスワードは区別したままにする）
+		const userMatches = constantTimeEqual(user.toLowerCase(), expectedUser.toLowerCase());
+		const passwordMatches = constantTimeEqual(password, expectedPassword);
+		if (!userMatches || !passwordMatches) {
 			return unauthorized();
 		}
 
