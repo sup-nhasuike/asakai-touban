@@ -200,7 +200,7 @@
       </div>
       <div class="toolbar">
         <button class="secondary small-btn" id="copyChatBtn">Google Chat用テキストをコピー</button>
-        <span class="muted">「【ローテーション】」＋「M/D(曜) @氏名 さん」の形式でコピーします（中止回は含みません）</span>
+        <span class="muted">「【ローテーション】」＋「M/D(曜) @氏名 さん」の形式でコピーします（中止回は「M/D(曜) 中止（理由）」として含みます）</span>
       </div>
       <div class="table-scroll">
         <table id="scheduleTable">
@@ -915,11 +915,16 @@ function escapeHtml(s){
 /* ---------- Google Chat用テキスト生成・コピー ---------- */
 function buildChatRotationText(){
   const lines = ['【ローテーション】'];
-  activeSlots().forEach(slot => {
+  state.assignments.forEach(slot => {
     const d = parseDate(slot.date);
     const md = `${d.getMonth()+1}/${d.getDate()}`;
-    const mem = memberById(slot.memberId);
-    lines.push(`${md}(${WEEKDAY_JP[d.getDay()]}) @${mem ? mem.name : '（未設定）'} さん`);
+    const wd = WEEKDAY_JP[d.getDay()];
+    if(slot.type === 'cancelled'){
+      lines.push(`${md}(${wd}) 中止${slot.reason ? `（${slot.reason}）` : ''}`);
+    } else {
+      const mem = memberById(slot.memberId);
+      lines.push(`${md}(${wd}) @${mem ? mem.name : '（未設定）'} さん`);
+    }
   });
   return lines.join('\n');
 }
@@ -1041,7 +1046,7 @@ document.getElementById('deleteMemberNoShift').addEventListener('click', () => {
 });
 
 document.getElementById('copyChatBtn').addEventListener('click', () => {
-  if(!activeSlots().length){ alert('コピーできるスケジュールがありません。'); return; }
+  if(!state.assignments.length){ alert('コピーできるスケジュールがありません。'); return; }
   copyTextToClipboard(buildChatRotationText());
 });
 
