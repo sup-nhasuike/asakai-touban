@@ -8,8 +8,9 @@ export default {
 				headers: { "WWW-Authenticate": 'Basic realm="Restricted", charset="UTF-8"' },
 			});
 
-		const expectedUser = env.BASIC_AUTH_USER;
-		const expectedPassword = env.BASIC_AUTH_PASSWORD;
+		// Cloudflareの管理画面への貼り付け時に紛れ込んだ余分な空白・改行の影響を受けないようにする
+		const expectedUser = (env.BASIC_AUTH_USER || "").trim();
+		const expectedPassword = (env.BASIC_AUTH_PASSWORD || "").trim();
 
 		// 環境変数が未設定の場合は、誤って無認証で公開されることがないよう常に拒否する
 		if (!expectedUser || !expectedPassword) {
