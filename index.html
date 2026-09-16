@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>朝会議事録当番決め</title>
+<style>
+  :root{
+    --bg:#f4f6fa; --card:#ffffff; --border:#dbe1ea; --text:#1f2937; --sub:#6b7280;
+    --accent:#3b6cf6; --accent-dark:#2851c9; --danger:#e0473f; --danger-dark:#c23a33;
+    --shifted:#f59e0b; --skip:#9ca3af; --hover:#eef2ff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:24px; background:var(--bg); color:var(--text);
+    font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  h1{font-size:22px; margin:0 0 4px;}
+  h2{font-size:16px; margin:0 0 12px; border-left:4px solid var(--accent); padding-left:8px;}
+  .lead{color:var(--sub); margin:0 0 20px;}
+  .layout{display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start;}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
+  label{font-size:12px; color:var(--sub); display:block; margin-bottom:4px;}
+  input[type=date], input[type=text], input[type=number], input[type=email], select{
+    padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:13px;
+    background:#fff; color:var(--text); width:100%;
+  }
+  .field{flex:1; min-width:120px;}
+  button{
+    cursor:pointer; border:none; border-radius:6px; padding:7px 12px; font-size:13px;
+    background:var(--accent); color:#fff; transition:background .15s;
+  }
+  button:hover{background:var(--accent-dark);}
+  button.secondary{background:#eef1f7; color:var(--text);}
+  button.secondary:hover{background:#e2e7f0;}
+  button.danger{background:#fdecec; color:var(--danger);}
+  button.danger:hover{background:#fbdada; color:var(--danger-dark);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{padding:6px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle;}
+  th{color:var(--sub); font-weight:600; font-size:12px;}
+  .member-row input{width:100%;}
+  .small-btn{padding:4px 8px; font-size:12px;}
+  .muted{color:var(--sub); font-size:12px;}
+  #scheduleTable tr{cursor:grab;}
+  #scheduleTable tr.dragging{opacity:.4;}
+  #scheduleTable tr.dragover{background:var(--hover);}
+  .badge{display:inline-block; font-size:11px; padding:1px 6px; border-radius:10px; margin-left:6px;}
+  .badge.shift{background:#fff3dc; color:#8a5a00;}
+  .badge.weekday{background:#eef1f7; color:var(--sub); margin-left:8px;}
+  .drag-handle{cursor:grab; color:var(--sub); padding-right:4px; user-select:none;}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  details summary{cursor:pointer; font-size:13px; color:var(--accent); margin-bottom:8px;}
+  .holiday-list{max-height:180px; overflow-y:auto; font-size:12px;}
+  .holiday-list div{padding:2px 0; border-bottom:1px dashed var(--border);}
+  #scheduleTable tr.cancelled-row{background:#f3f4f6; color:var(--sub); cursor:default;}
+  #scheduleTable tr.cancelled-row td{border-bottom:1px dashed var(--border); font-size:12.5px;}
+  .badge.cancel{background:#fde2e1; color:#a33a34;}
+  .note-box{background:#fff8e6; border:1px solid #f2dca0; color:#7a5b00; border-radius:8px; padding:10px 12px; font-size:12.5px; margin-bottom:20px;}
+  .add-form{display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin-top:8px;}
+  .add-form .field{min-width:110px;}
+  .count-badge{font-size:11px; color:var(--sub);}
+  .empty{color:var(--sub); font-size:13px; padding:12px 0;}
+  .modal-overlay{position:fixed; inset:0; background:rgba(20,24,34,.45); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
+  .modal-box{background:#fff; border-radius:10px; padding:20px; width:min(440px,100%); box-shadow:0 12px 34px rgba(0,0,0,.25);}
+  .modal-box h3{margin:0 0 10px; font-size:16px;}
+  .modal-actions{display:flex; flex-direction:column; gap:8px; margin-top:14px;}
+  .modal-actions button{width:100%; text-align:left;}
+  .modal-hint{font-size:12px; color:var(--sub); margin-top:12px; line-height:1.6;}
+</style>
+</head>
+<body>
+
+<h1>朝会議事録当番決め</h1>
+<p class="lead">毎週月曜（祝日の場合は翌日）に議事録担当者を自動で割り当てます。中止期間を設定すると、それ以降の担当は自動的に先送りされます。</p>
+
+<div class="note-box">
+  ※ 担当者一覧はサンプルの架空データです。実際に使う際は氏名・メールアドレスなどの個人情報の取り扱いにご注意のうえ、ご自身の組織の情報に置き換えてください。このファイルはブラウザ内（localStorage）にのみデータを保存し、外部には送信されません。
+</div>
+
+<div class="layout">
+  <div>
+
+    <div class="card">
+      <h2>スケジュール設定</h2>
+      <div class="row">
+        <div class="field">
+          <label>起点日（この日までは決定済み。翌週以降の月曜から生成）</label>
+          <input type="date" id="baseDateInput">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>開始担当者（起点日後、最初の朝会の担当者）</label>
+          <select id="startMemberSelect"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="max-width:140px;">
+          <label>生成する週数</label>
+          <input type="number" id="weeksCountInput" min="1" value="20">
+        </div>
+        <div style="align-self:flex-end;">
+          <button id="regenBtn">スケジュールを生成／再生成</button>
+        </div>
+      </div>
+      <div class="row">
+        <button class="secondary small-btn" id="appendBtn">＋4週分を追加</button>
+        <span class="muted">既存の予定はそのままに、続きを追加します</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>担当者一覧（<span id="memberCount">0</span>名）</h2>
+      <table>
+        <thead><tr><th style="width:36px;">No.</th><th>氏名</th><th>メールアドレス</th><th></th></tr></thead>
+        <tbody id="memberTbody"></tbody>
+      </table>
+      <div class="add-form">
+        <div class="field"><label>氏名</label><input type="text" id="newMemberName" placeholder="例）新規 太郎"></div>
+        <div class="field"><label>メールアドレス</label><input type="email" id="newMemberEmail" placeholder="例）example@example.com"></div>
+        <button class="small-btn" id="addMemberBtn">追加</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>朝会中止設定</h2>
+      <p class="muted">お盆・GW・年末年始など、期間を指定して朝会を中止できます。設定すると以降の担当日程が自動で先送りされます。</p>
+      <table>
+        <thead><tr><th>開始日</th><th>終了日</th><th>理由</th><th></th></tr></thead>
+        <tbody id="cancelTbody"></tbody>
+      </table>
+      <div class="add-form">
+        <div class="field"><label>開始日</label><input type="date" id="newCancelStart"></div>
+        <div class="field"><label>終了日</label><input type="date" id="newCancelEnd"></div>
+        <div class="field"><label>理由</label><input type="text" id="newCancelReason" placeholder="例）年末年始休業"></div>
+        <button class="small-btn" id="addCancelBtn">追加</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>祝日</h2>
+      <p class="muted">法律に基づく祝日・振替休日・国民の休日を自動計算しています（月曜が祝日の場合は翌日に朝会を実施）。</p>
+      <details>
+        <summary id="holidaySummary">計算された祝日一覧を表示</summary>
+        <div class="holiday-list" id="holidayList"></div>
+      </details>
+      <div class="add-form">
+        <div class="field"><label>追加の祝日（会社独自の休日など）</label><input type="date" id="newHolidayDate"></div>
+        <div class="field"><label>名称</label><input type="text" id="newHolidayName" placeholder="例）創立記念日"></div>
+        <button class="small-btn" id="addHolidayBtn">追加</button>
+      </div>
+      <div id="customHolidayList" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>朝会当番スケジュール</h2>
+      <div class="toolbar">
+        <span class="muted">行をドラッグ＆ドロップすると担当者を入れ替えられます。プルダウンからの直接変更も可能です。</span>
+      </div>
+      <table id="scheduleTable">
+        <thead><tr><th style="width:24px;"></th><th>日付</th><th>担当者</th><th>メールアドレス</th><th></th></tr></thead>
+        <tbody id="scheduleTbody"></tbody>
+      </table>
+      <div id="scheduleEmpty" class="empty" style="display:none;">まだスケジュールがありません。左の「スケジュールを生成／再生成」を押してください。</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal-box">
+    <h3>この回を中止にしますか？</h3>
+    <p class="muted" id="cancelModalInfo"></p>
+    <div class="modal-actions">
+      <button id="cancelModalShift">後ろにずらして中止する（担当者を含め、以降を1週ずつ繰り下げ）</button>
+      <button class="secondary" id="cancelModalNoShift">ずらさずに中止する（この回だけ無くなり、以降はそのまま）</button>
+      <button class="danger" id="cancelModalClose">キャンセル</button>
+    </div>
+    <p class="modal-hint">
+      「後ろにずらす」を選ぶと、この回の担当者はそのまま次に有効な日程に回り、以降の担当日程が1週ずつ後ろにずれます。<br>
+      「ずらさない」を選ぶと、この回だけが無くなり、それ以降の日程・担当者は変わりません。<br>
+      どちらの場合も「朝会中止設定」の一覧に中止日として反映されます。
+    </p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteMemberModal">
+  <div class="modal-box">
+    <h3>担当者を削除しますか？</h3>
+    <p class="muted" id="deleteMemberInfo"></p>
+    <div class="modal-actions">
+      <button id="deleteMemberShift">前倒しして削除する（この担当者を除いて、以降の当番を詰めます）</button>
+      <button class="secondary" id="deleteMemberNoShift">前倒しせず削除する（この担当者の回は先頭の担当者に振り替えます）</button>
+      <button class="danger" id="deleteMemberCancel">キャンセル</button>
+    </div>
+    <p class="modal-hint">
+      「前倒しして削除する」を選ぶと、この担当者が入っていた回はなくなり、以降の担当日程が1週ずつ前に詰まります（合計の実施回数が減ります）。<br>
+      「前倒しせず削除する」を選ぶと、日程はそのままで、この担当者だった回だけ一覧の先頭の担当者に置き換わります。
+    </p>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- 日付ユーティリティ ---------- */
+const WEEKDAY_JP = ['日','月','火','水','木','金','土'];
+
+function fmt(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDate(s){
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function addDays(d, n){
+  const nd = new Date(d);
+  nd.setDate(nd.getDate()+n);
+  return nd;
+}
+function fmtDisplay(dateStr){
+  const d = parseDate(dateStr);
+  return `${dateStr}（${WEEKDAY_JP[d.getDay()]}）`;
+}
+function uid(){
+  return 'id_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+
+/* ---------- 祝日計算 ---------- */
+// 春分・秋分の日は暦要項により毎年決定されるため、推定値を年ごとに保持。
+// 範囲外の年は直近の推定値で代用するため、必要に応じて手動で「追加の祝日」から補正してください。
+const EQUINOX = {
+  2024:{spring:'03-20',autumn:'09-22'},
+  2025:{spring:'03-20',autumn:'09-23'},
+  2026:{spring:'03-20',autumn:'09-23'},
+  2027:{spring:'03-21',autumn:'09-23'},
+  2028:{spring:'03-20',autumn:'09-22'},
+  2029:{spring:'03-20',autumn:'09-23'},
+  2030:{spring:'03-20',autumn:'09-23'},
+  2031:{spring:'03-21',autumn:'09-23'},
+  2032:{spring:'03-20',autumn:'09-22'},
+};
+function equinox(year, which){
+  const e = EQUINOX[year] || EQUINOX[2026];
+  return `${year}-${e[which]}`;
+}
+function nthMondayOfMonth(year, month, n){
+  const first = new Date(year, month-1, 1);
+  const offsetToMonday = (1 - first.getDay() + 7) % 7;
+  const day = 1 + offsetToMonday + (n-1)*7;
+  return new Date(year, month-1, day);
+}
+function baseHolidaysForYear(year){
+  const list = [];
+  const add = (dateStr, name) => list.push({date:dateStr, name});
+  add(`${year}-01-01`, '元日');
+  add(fmt(nthMondayOfMonth(year,1,2)), '成人の日');
+  add(`${year}-02-11`, '建国記念の日');
+  add(`${year}-02-23`, '天皇誕生日');
+  add(equinox(year,'spring'), '春分の日');
+  add(`${year}-04-29`, '昭和の日');
+  add(`${year}-05-03`, '憲法記念日');
+  add(`${year}-05-04`, 'みどりの日');
+  add(`${year}-05-05`, 'こどもの日');
+  add(fmt(nthMondayOfMonth(year,7,3)), '海の日');
+  add(`${year}-08-11`, '山の日');
+  add(fmt(nthMondayOfMonth(year,9,3)), '敬老の日');
+  add(equinox(year,'autumn'), '秋分の日');
+  add(fmt(nthMondayOfMonth(year,10,2)), 'スポーツの日');
+  add(`${year}-11-03`, '文化の日');
+  add(`${year}-11-23`, '勤労感謝の日');
+  return list;
+}
+// 指定期間をカバーする祝日Map（振替休日・国民の休日を含む）を生成
+function buildHolidayMap(startYear, endYear){
+  let list = [];
+  for(let y=startYear-1; y<=endYear+1; y++) list = list.concat(baseHolidaysForYear(y));
+  list.sort((a,b)=> a.date.localeCompare(b.date));
+  const set = new Map(list.map(h => [h.date, h.name]));
+
+  // 国民の休日：前後を祝日に挟まれた平日（日曜を除く）
+  for(let i=0; i<list.length-1; i++){
+    const d1 = parseDate(list[i].date);
+    const d2 = parseDate(list[i+1].date);
+    const diffDays = Math.round((d2 - d1) / 86400000);
+    if(diffDays === 2){
+      const mid = addDays(d1,1);
+      const midStr = fmt(mid);
+      if(!set.has(midStr) && mid.getDay() !== 0){
+        set.set(midStr, '国民の休日');
+      }
+    }
+  }
+  // 振替休日：祝日が日曜の場合、直後の祝日でない日を休日にする
+  const sortedDates = Array.from(set.keys()).sort();
+  for(const dateStr of sortedDates){
+    const d = parseDate(dateStr);
+    if(d.getDay() === 0){
+      let next = addDays(d,1);
+      while(set.has(fmt(next))) next = addDays(next,1);
+      set.set(fmt(next), '振替休日');
+    }
+  }
+  return set;
+}
+
+/* ---------- アプリ状態 ---------- */
+const STORAGE_KEY = 'asakai_touban_state_v1';
+
+function defaultMembers(){
+  const raw = [
+    ['佐藤 太郎','sato.taro@example.com'],
+    ['鈴木 花子','suzuki.hanako@example.com'],
+    ['高橋 健一','takahashi.kenichi@example.com'],
+    ['田中 美咲','tanaka.misaki@example.com'],
+    ['伊藤 直樹','ito.naoki@example.com'],
+    ['渡辺 由美','watanabe.yumi@example.com'],
+    ['山本 大輔','yamamoto.daisuke@example.com'],
+    ['中村 彩','nakamura.aya@example.com'],
+    ['小林 亮','kobayashi.ryo@example.com'],
+    ['加藤 恵','kato.megumi@example.com'],
+    ['吉田 翔太','yoshida.shota@example.com'],
+    ['山田 陽子','yamada.yoko@example.com'],
+    ['佐々木 拓也','sasaki.takuya@example.com'],
+    ['山口 真央','yamaguchi.mao@example.com'],
+    ['松本 健太','matsumoto.kenta@example.com'],
+    ['井上 智子','inoue.tomoko@example.com'],
+    ['木村 淳','kimura.jun@example.com'],
+    ['林 美穂','hayashi.miho@example.com'],
+    ['清水 大樹','shimizu.daiki@example.com'],
+    ['森 綾','mori.aya@example.com'],
+  ];
+  return raw.map(([name,email]) => ({id:uid(), name, email}));
+}
+
+function defaultState(){
+  const members = defaultMembers();
+  return {
+    baseDate: '2026-10-05',
+    startMemberId: members[0].id,
+    weeksCount: 20,
+    members,
+    cancelRanges: [
+      {id:uid(), start:'2026-12-29', end:'2027-01-04', reason:'年末年始休業'},
+    ],
+    customHolidays: [],
+    assignments: [],
+  };
+}
+
+let state = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    if(!parsed.members || !parsed.members.length) return defaultState();
+    // 旧バージョン（中止回を別枠のskippedWeeksで管理していた形式）からの読み込み互換
+    if(!Array.isArray(parsed.assignments)) parsed.assignments = [];
+    parsed.assignments.forEach(a => { if(!a.type) a.type = 'active'; });
+    if(!Array.isArray(parsed.cancelRanges)) parsed.cancelRanges = [];
+    if(!Array.isArray(parsed.customHolidays)) parsed.customHolidays = [];
+    delete parsed.skippedWeeks;
+    return parsed;
+  }catch(e){
+    return defaultState();
+  }
+}
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){ /* 保存に失敗しても動作は継続する */ }
+}
+
+/* ---------- 祝日／中止判定 ---------- */
+function getHolidayMap(){
+  const y = parseDate(state.baseDate).getFullYear();
+  const map = buildHolidayMap(y, y+3);
+  for(const h of state.customHolidays) map.set(h.date, h.name);
+  return map;
+}
+function isCancelled(dateStr){
+  return state.cancelRanges.find(r => dateStr >= r.start && dateStr <= r.end) || null;
+}
+
+// 指定の月曜日を起点に、実際の朝会日を決定する。中止の場合はnullを返す。
+function computeMeetingDate(monday, holidayMap){
+  const mondayStr = fmt(monday);
+  const cancelHit = isCancelled(mondayStr);
+  if(cancelHit) return {ok:false, mondayStr, reason:cancelHit.reason};
+
+  let d = monday;
+  let shifted = false;
+  let holidayName = null;
+  while(holidayMap.has(fmt(d))){
+    holidayName = holidayMap.get(fmt(d));
+    d = addDays(d,1);
+    shifted = true;
+    const hit = isCancelled(fmt(d));
+    if(hit) return {ok:false, mondayStr, reason:hit.reason};
+  }
+  return {ok:true, date:fmt(d), shifted, holidayName, mondayStr};
+}
+
+// afterDateStrより後の最初の月曜から、seq（担当者id配列）の人数分の実施回を生成する。
+// 中止となった週も type:'cancelled' として同じ時系列の配列に含めて返す（表に中止回をそのまま残すため）。
+function generateTimeline(afterDateStr, seq, holidayMap){
+  const timeline = [];
+  let monday = addDays(parseDate(afterDateStr), 1);
+  while(monday.getDay() !== 1) monday = addDays(monday, 1);
+
+  let seqIdx = 0;
+  let guard = 0;
+  while(seqIdx < seq.length && guard < 3000){
+    guard++;
+    const r = computeMeetingDate(monday, holidayMap);
+    if(r.ok){
+      timeline.push({
+        id: uid(), type:'active', date:r.date, monday:r.mondayStr, shifted:r.shifted, holidayName:r.holidayName, memberId: seq[seqIdx],
+      });
+      seqIdx++;
+    } else {
+      timeline.push({ id: uid(), type:'cancelled', date:r.mondayStr, reason:r.reason });
+    }
+    monday = addDays(monday, 7);
+  }
+  return timeline;
+}
+
+function buildAssigneeSequence(startMemberId, count){
+  const members = state.members;
+  let startIdx = members.findIndex(m => m.id === startMemberId);
+  if(startIdx < 0) startIdx = 0;
+  const seq = [];
+  for(let i=0;i<count;i++) seq.push(members[(startIdx+i) % members.length].id);
+  return seq;
+}
+
+function activeSlots(){
+  return state.assignments.filter(a => a.type === 'active');
+}
+
+// 指定の担当者シーケンスをもとに、起点日から丸ごとスケジュール（実施回＋中止回）を作り直す
+function regenerateFromSeq(seq){
+  const holidayMap = getHolidayMap();
+  state.assignments = generateTimeline(state.baseDate, seq, holidayMap);
+  state.weeksCount = seq.length;
+  document.getElementById('weeksCountInput').value = state.weeksCount || state.members.length;
+}
+
+/* ---------- スケジュール生成／再計算 ---------- */
+function fullRegenerate(){
+  const count = Math.max(1, Number(document.getElementById('weeksCountInput').value) || state.members.length);
+  const seq = buildAssigneeSequence(state.startMemberId, count);
+  regenerateFromSeq(seq);
+  save();
+  renderSchedule();
+}
+
+// 担当者の並び順（ドラッグ操作等の結果）は維持したまま、日付・中止回だけを再計算する
+function recomputeDatesOnly(){
+  const seq = activeSlots().map(a => a.memberId);
+  if(!seq.length) return;
+  regenerateFromSeq(seq);
+  save();
+  renderSchedule();
+}
+
+// 指定の回を中止にする。shiftFollowing=true なら担当者を含めて以降を後ろ倒し、
+// false ならこの回だけ中止にし、以降の日程・担当者はそのまま。
+// いずれの場合も「朝会中止設定」に中止日として登録し、一覧・表の両方に反映する。
+function markSlotCancelled(slotId, shiftFollowing){
+  const active = activeSlots();
+  const idx = active.findIndex(a => a.id === slotId);
+  if(idx === -1) return;
+  const slot = active[idx];
+  // 中止設定は「元の月曜日」で登録する（祝日振替で実施日が翌日以降にずれていても、
+  // 表の中止行はその週の月曜日で表示されるため、キーを揃えて後から正しく取り消せるようにする）
+  const key = slot.monday || slot.date;
+
+  state.cancelRanges.push({
+    id: uid(),
+    start: key,
+    end: key,
+    reason: shiftFollowing ? 'この回を中止（後ろ倒し）' : 'この回を中止',
+  });
+  state.cancelRanges.sort((a,b) => a.start.localeCompare(b.start));
+
+  const seq = shiftFollowing
+    ? active.map(a => a.memberId)
+    : active.filter((a,i) => i !== idx).map(a => a.memberId);
+
+  regenerateFromSeq(seq);
+  save();
+  renderCancelRanges();
+  renderSchedule();
+}
+
+// 表の中止回にある「取り消す」ボタン用：単発の中止設定を取り消して詰め直す
+function restoreCancelledDate(dateStr){
+  const before = state.cancelRanges.length;
+  state.cancelRanges = state.cancelRanges.filter(r => !(r.start === dateStr && r.end === dateStr));
+  if(state.cancelRanges.length === before){
+    alert('この中止は期間指定の中止設定（お盆・GW等）に含まれています。左側の「朝会中止設定」から編集・削除してください。');
+    return;
+  }
+  save();
+  renderCancelRanges();
+  recomputeDatesOnly();
+}
+
+function appendWeeks(n){
+  if(!state.assignments.length){ fullRegenerate(); return; }
+  const active = activeSlots();
+  const last = active[active.length-1];
+  const lastIdx = last ? state.members.findIndex(m => m.id === last.memberId) : -1;
+  const baseIdx = lastIdx < 0 ? 0 : lastIdx;
+  const seqAppend = [];
+  for(let i=1;i<=n;i++) seqAppend.push(state.members[(baseIdx+i) % state.members.length].id);
+  const holidayMap = getHolidayMap();
+  const lastDate = state.assignments[state.assignments.length-1].date;
+  const newTimeline = generateTimeline(lastDate, seqAppend, holidayMap);
+  state.assignments = state.assignments.concat(newTimeline);
+  state.weeksCount = activeSlots().length;
+  document.getElementById('weeksCountInput').value = state.weeksCount;
+  save();
+  renderSchedule();
+}
+
+/* ---------- 描画 ---------- */
+function memberById(id){
+  return state.members.find(m => m.id === id);
+}
+
+function renderMemberOptions(){
+  const sel = document.getElementById('startMemberSelect');
+  const current = state.startMemberId;
+  sel.innerHTML = '';
+  state.members.forEach((m, idx) => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = `${idx + 1}. ${m.name}`;
+    if(m.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderMembers(){
+  const tbody = document.getElementById('memberTbody');
+  tbody.innerHTML = '';
+  state.members.forEach((m, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = 'member-row';
+
+    const tdNo = document.createElement('td');
+    tdNo.className = 'muted';
+    tdNo.textContent = idx + 1;
+    tr.appendChild(tdNo);
+
+    const tdName = document.createElement('td');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = m.name;
+    nameInput.addEventListener('change', () => { m.name = nameInput.value; save(); renderMemberOptions(); renderSchedule(); });
+    tdName.appendChild(nameInput);
+
+    const tdEmail = document.createElement('td');
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.value = m.email || '';
+    emailInput.addEventListener('change', () => { m.email = emailInput.value; save(); renderSchedule(); });
+    tdEmail.appendChild(emailInput);
+
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'danger small-btn';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => requestDeleteMember(m.id));
+    tdDel.appendChild(delBtn);
+
+    tr.appendChild(tdName); tr.appendChild(tdEmail); tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+  document.getElementById('memberCount').textContent = state.members.length;
+}
+
+function renderCancelRanges(){
+  const tbody = document.getElementById('cancelTbody');
+  tbody.innerHTML = '';
+  if(!state.cancelRanges.length){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4; td.className = 'muted'; td.textContent = '中止期間は設定されていません';
+    tr.appendChild(td); tbody.appendChild(tr);
+  }
+  state.cancelRanges.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.start}</td><td>${r.end}</td><td>${escapeHtml(r.reason || '')}</td>`;
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'danger small-btn';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => {
+      state.cancelRanges = state.cancelRanges.filter(x => x.id !== r.id);
+      save();
+      renderCancelRanges();
+      recomputeDatesOnly();
+    });
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderHolidays(){
+  const map = getHolidayMap();
+  const list = Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0]));
+  const container = document.getElementById('holidayList');
+  container.innerHTML = '';
+  list.forEach(([date,name]) => {
+    const div = document.createElement('div');
+    div.textContent = `${fmtDisplay(date)}　${name}`;
+    container.appendChild(div);
+  });
+  document.getElementById('holidaySummary').textContent = `計算された祝日一覧を表示（${list.length}件）`;
+
+  const customBox = document.getElementById('customHolidayList');
+  customBox.innerHTML = '';
+  state.customHolidays.forEach(h => {
+    const span = document.createElement('div');
+    span.style.display = 'flex'; span.style.justifyContent = 'space-between'; span.style.alignItems='center'; span.style.marginBottom='4px';
+    span.innerHTML = `<span>${fmtDisplay(h.date)}　${escapeHtml(h.name)}</span>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'danger small-btn';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => {
+      state.customHolidays = state.customHolidays.filter(x => x.date !== h.date || x.name !== h.name);
+      save();
+      renderHolidays();
+      recomputeDatesOnly();
+    });
+    span.appendChild(delBtn);
+    customBox.appendChild(span);
+  });
+}
+
+let dragSrcIndex = null;
+
+function renderSchedule(){
+  const tbody = document.getElementById('scheduleTbody');
+  tbody.innerHTML = '';
+  const empty = document.getElementById('scheduleEmpty');
+  empty.style.display = state.assignments.length ? 'none' : 'block';
+
+  state.assignments.forEach((slot, idx) => {
+    const tr = document.createElement('tr');
+
+    // 中止回：日付の位置にそのまま残し、グレーアウトして「中止」バッジで見分けられるようにする
+    if(slot.type === 'cancelled'){
+      tr.className = 'cancelled-row';
+
+      const tdHandle = document.createElement('td');
+      tr.appendChild(tdHandle);
+
+      const tdDate = document.createElement('td');
+      tdDate.innerHTML = `${fmtDisplay(slot.date)}<span class="badge cancel">中止</span>`;
+      tr.appendChild(tdDate);
+
+      const tdInfo = document.createElement('td');
+      tdInfo.colSpan = 2;
+      tdInfo.textContent = slot.reason || '朝会中止';
+      tr.appendChild(tdInfo);
+
+      const tdAction = document.createElement('td');
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'secondary small-btn';
+      restoreBtn.textContent = '取り消す';
+      restoreBtn.addEventListener('click', () => restoreCancelledDate(slot.date));
+      tdAction.appendChild(restoreBtn);
+      tr.appendChild(tdAction);
+
+      tbody.appendChild(tr);
+      return;
+    }
+
+    // 実施回：ドラッグ＆ドロップで担当者を入れ替え可能
+    tr.draggable = true;
+    tr.dataset.index = idx;
+
+    tr.addEventListener('dragstart', (e) => {
+      dragSrcIndex = idx;
+      tr.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
+    });
+    tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); });
+    tr.addEventListener('dragover', (e) => { e.preventDefault(); tr.classList.add('dragover'); });
+    tr.addEventListener('dragleave', () => { tr.classList.remove('dragover'); });
+    tr.addEventListener('drop', (e) => {
+      e.preventDefault();
+      tr.classList.remove('dragover');
+      const from = dragSrcIndex;
+      const to = idx;
+      if(from === null || from === to) return;
+      if(state.assignments[from].type !== 'active' || state.assignments[to].type !== 'active') return;
+      const tmp = state.assignments[from].memberId;
+      state.assignments[from].memberId = state.assignments[to].memberId;
+      state.assignments[to].memberId = tmp;
+      dragSrcIndex = null;
+      save();
+      renderSchedule();
+    });
+
+    const tdHandle = document.createElement('td');
+    tdHandle.className = 'drag-handle';
+    tdHandle.textContent = '⠿';
+    tr.appendChild(tdHandle);
+
+    const tdDate = document.createElement('td');
+    let dateHtml = fmtDisplay(slot.date);
+    if(slot.shifted){
+      dateHtml += `<span class="badge shift" title="${escapeHtml(slot.holidayName||'')}の振替">祝日のため翌日実施</span>`;
+    }
+    tdDate.innerHTML = dateHtml;
+    tr.appendChild(tdDate);
+
+    const tdMember = document.createElement('td');
+    const sel = document.createElement('select');
+    state.members.forEach((m, idx) => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = `${idx + 1}. ${m.name}`;
+      if(m.id === slot.memberId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      slot.memberId = sel.value;
+      save();
+      renderSchedule();
+    });
+    tdMember.appendChild(sel);
+    tr.appendChild(tdMember);
+
+    const tdEmail = document.createElement('td');
+    const mem = memberById(slot.memberId);
+    tdEmail.textContent = mem ? (mem.email || '') : '';
+    tdEmail.className = 'muted';
+    tr.appendChild(tdEmail);
+
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'secondary small-btn';
+    delBtn.textContent = 'この回を中止にする';
+    delBtn.addEventListener('click', () => openCancelModal(slot.id));
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- 中止確認モーダル ---------- */
+let cancelTargetSlotId = null;
+
+function openCancelModal(slotId){
+  const slot = state.assignments.find(a => a.id === slotId);
+  if(!slot) return;
+  cancelTargetSlotId = slotId;
+  const mem = memberById(slot.memberId);
+  document.getElementById('cancelModalInfo').textContent =
+    `対象：${fmtDisplay(slot.date)}　担当：${mem ? mem.name : '（未設定）'}`;
+  document.getElementById('cancelModal').style.display = 'flex';
+}
+function closeCancelModal(){
+  cancelTargetSlotId = null;
+  document.getElementById('cancelModal').style.display = 'none';
+}
+
+/* ---------- 担当者削除の確認モーダル ---------- */
+let deleteTargetMemberId = null;
+
+// 削除しようとしている担当者が、今後の当番に入っているかどうかで確認方法を分ける
+function requestDeleteMember(memberId){
+  const m = memberById(memberId);
+  if(!m) return;
+  if(state.members.length <= 1){ alert('担当者は最低1名必要です。'); return; }
+
+  const upcomingCount = activeSlots().filter(a => a.memberId === memberId).length;
+  if(upcomingCount === 0){
+    if(!confirm(`${m.name} を削除しますか？`)) return;
+    performDeleteMember(memberId, null);
+    return;
+  }
+  deleteTargetMemberId = memberId;
+  document.getElementById('deleteMemberInfo').textContent =
+    `${m.name} は今後の朝会当番に ${upcomingCount} 回割り当てられています。削除後、以降の日程をどうしますか？`;
+  document.getElementById('deleteMemberModal').style.display = 'flex';
+}
+function closeDeleteMemberModal(){
+  deleteTargetMemberId = null;
+  document.getElementById('deleteMemberModal').style.display = 'none';
+}
+
+// shiftForward: true=前倒しして削除／false=前倒しせず削除／null=そもそも当番に入っていなかった
+function performDeleteMember(memberId, shiftForward){
+  const m = memberById(memberId);
+  if(!m) return;
+
+  const seqWithoutMember = shiftForward === true
+    ? activeSlots().filter(a => a.memberId !== memberId).map(a => a.memberId)
+    : null;
+
+  state.members = state.members.filter(x => x.id !== memberId);
+  if(state.startMemberId === memberId) state.startMemberId = state.members[0].id;
+
+  if(shiftForward === true){
+    // この担当者を今後の割当から完全に除外し、以降の日程を1週ずつ前倒しして詰め直す
+    regenerateFromSeq(seqWithoutMember);
+  } else if(shiftForward === false){
+    // 前倒しせず、この担当者だった回だけ一覧の先頭の担当者に振り替える（日程・他の担当はそのまま）
+    state.assignments.forEach(slot => {
+      if(slot.type === 'active' && slot.memberId === memberId) slot.memberId = state.members[0].id;
+    });
+  }
+
+  save();
+  renderMembers(); renderMemberOptions(); renderSchedule();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll(){
+  document.getElementById('baseDateInput').value = state.baseDate;
+  document.getElementById('weeksCountInput').value = state.weeksCount;
+  renderMemberOptions();
+  renderMembers();
+  renderCancelRanges();
+  renderHolidays();
+  renderSchedule();
+}
+
+/* ---------- イベント登録 ---------- */
+document.getElementById('baseDateInput').addEventListener('change', (e) => {
+  state.baseDate = e.target.value;
+  save();
+  renderHolidays();
+  recomputeDatesOnly();
+});
+document.getElementById('startMemberSelect').addEventListener('change', (e) => {
+  state.startMemberId = e.target.value;
+  save();
+});
+document.getElementById('regenBtn').addEventListener('click', fullRegenerate);
+document.getElementById('appendBtn').addEventListener('click', () => appendWeeks(4));
+
+document.getElementById('addMemberBtn').addEventListener('click', () => {
+  const nameInput = document.getElementById('newMemberName');
+  const emailInput = document.getElementById('newMemberEmail');
+  const name = nameInput.value.trim();
+  if(!name){ alert('氏名を入力してください。'); return; }
+  state.members.push({id:uid(), name, email:emailInput.value.trim()});
+  nameInput.value = ''; emailInput.value = '';
+  save();
+  renderMembers(); renderMemberOptions(); renderSchedule();
+});
+
+document.getElementById('addCancelBtn').addEventListener('click', () => {
+  const startInput = document.getElementById('newCancelStart');
+  const endInput = document.getElementById('newCancelEnd');
+  const reasonInput = document.getElementById('newCancelReason');
+  const start = startInput.value, end = endInput.value;
+  if(!start || !end){ alert('開始日と終了日を入力してください。'); return; }
+  if(start > end){ alert('終了日は開始日以降にしてください。'); return; }
+  state.cancelRanges.push({id:uid(), start, end, reason:reasonInput.value.trim() || '朝会中止'});
+  state.cancelRanges.sort((a,b) => a.start.localeCompare(b.start));
+  startInput.value=''; endInput.value=''; reasonInput.value='';
+  save();
+  renderCancelRanges();
+  recomputeDatesOnly();
+});
+
+document.getElementById('addHolidayBtn').addEventListener('click', () => {
+  const dateInput = document.getElementById('newHolidayDate');
+  const nameInput = document.getElementById('newHolidayName');
+  const date = dateInput.value;
+  if(!date){ alert('日付を入力してください。'); return; }
+  state.customHolidays.push({date, name: nameInput.value.trim() || '会社休日'});
+  dateInput.value=''; nameInput.value='';
+  save();
+  renderHolidays();
+  recomputeDatesOnly();
+});
+
+document.getElementById('cancelModalClose').addEventListener('click', closeCancelModal);
+document.getElementById('cancelModal').addEventListener('click', (e) => {
+  if(e.target.id === 'cancelModal') closeCancelModal(); // 背景クリックで閉じる
+});
+document.getElementById('cancelModalShift').addEventListener('click', () => {
+  if(cancelTargetSlotId) markSlotCancelled(cancelTargetSlotId, true);
+  closeCancelModal();
+});
+document.getElementById('cancelModalNoShift').addEventListener('click', () => {
+  if(cancelTargetSlotId) markSlotCancelled(cancelTargetSlotId, false);
+  closeCancelModal();
+});
+
+document.getElementById('deleteMemberCancel').addEventListener('click', closeDeleteMemberModal);
+document.getElementById('deleteMemberModal').addEventListener('click', (e) => {
+  if(e.target.id === 'deleteMemberModal') closeDeleteMemberModal(); // 背景クリックで閉じる
+});
+document.getElementById('deleteMemberShift').addEventListener('click', () => {
+  if(deleteTargetMemberId) performDeleteMember(deleteTargetMemberId, true);
+  closeDeleteMemberModal();
+});
+document.getElementById('deleteMemberNoShift').addEventListener('click', () => {
+  if(deleteTargetMemberId) performDeleteMember(deleteTargetMemberId, false);
+  closeDeleteMemberModal();
+});
+
+/* ---------- 初期化 ---------- */
+renderAll();
+if(!state.assignments.length){
+  fullRegenerate();
+}
+
+})();
+</script>
+</body>
+</html>
