@@ -2,6 +2,11 @@
 	"name": "asakai-touban",
 	"main": "./src/worker.js",
 	"compatibility_date": "2026-09-16",
+	// Basic認証のユーザー名（機密ではないためコード管理）。
+	// パスワードはCloudflareダッシュボードのSecretとして別途登録し、ここには置かない。
+	"vars": {
+		"BASIC_AUTH_USER": "asakai"
+	},
 	"assets": {
 		"directory": "./public/",
 		"binding": "ASSETS",
