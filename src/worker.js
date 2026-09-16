@@ -2,6 +2,43 @@
 // 認証情報は環境変数（Cloudflareのシークレット）から読み込み、コードには直書きしない。
 export default {
 	async fetch(request, env) {
+		// --- 一時的な診断用エンドポイント（原因確認後にすぐ削除する）---
+		// パスワードそのものは表示せず、長さや受信状況だけを返す
+		const url = new URL(request.url);
+		if (url.pathname === "/__debug_auth") {
+			const authHeader = request.headers.get("Authorization") || "";
+			let decodedInfo = "N/A";
+			if (authHeader.startsWith("Basic ")) {
+				try {
+					const decoded = atob(authHeader.slice("Basic ".length));
+					const sep = decoded.indexOf(":");
+					decodedInfo = {
+						hasColon: sep !== -1,
+						userLength: sep === -1 ? null : decoded.slice(0, sep).trim().length,
+						passwordLength: sep === -1 ? null : decoded.slice(sep + 1).trim().length,
+					};
+				} catch (e) {
+					decodedInfo = "decode error: " + e.message;
+				}
+			}
+			return new Response(
+				JSON.stringify(
+					{
+						hasAuthorizationHeader: authHeader.length > 0,
+						authHeaderStartsWithBasic: authHeader.startsWith("Basic "),
+						envUserSet: typeof env.BASIC_AUTH_USER === "string" && env.BASIC_AUTH_USER.length > 0,
+						envUserLength: (env.BASIC_AUTH_USER || "").length,
+						envPasswordSet: typeof env.BASIC_AUTH_PASSWORD === "string" && env.BASIC_AUTH_PASSWORD.length > 0,
+						envPasswordLength: (env.BASIC_AUTH_PASSWORD || "").length,
+						decodedInfo,
+					},
+					null,
+					2
+				),
+				{ headers: { "Content-Type": "application/json" } }
+			);
+		}
+
 		const unauthorized = () =>
 			new Response("Authentication required.", {
 				status: 401,
