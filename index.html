@@ -42,6 +42,9 @@
   th,td{padding:6px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle;}
   th{color:var(--sub); font-weight:600; font-size:12px;}
   .member-row input{width:100%;}
+  #memberTable{table-layout:fixed;}
+  #memberTable td, #memberTable th{overflow:hidden;}
+  #memberTable input{text-overflow:ellipsis;}
   .small-btn{padding:4px 8px; font-size:12px;}
   .muted{color:var(--sub); font-size:12px;}
   #scheduleTable tr{cursor:grab;}
@@ -114,8 +117,14 @@
 
     <div class="card">
       <h2>担当者一覧（<span id="memberCount">0</span>名）</h2>
-      <table>
-        <thead><tr><th style="width:36px;">No.</th><th>氏名</th><th>メールアドレス</th><th></th></tr></thead>
+      <table id="memberTable">
+        <thead><tr>
+          <th style="width:28px;">No.</th>
+          <th style="width:34%;">氏名</th>
+          <th style="width:17%;">メールアドレス</th>
+          <th>割当日</th>
+          <th style="width:44px;"></th>
+        </tr></thead>
         <tbody id="memberTbody"></tbody>
       </table>
       <div class="add-form">
@@ -163,8 +172,12 @@
       <div class="toolbar">
         <span class="muted">行をドラッグ＆ドロップすると担当者を入れ替えられます。プルダウンからの直接変更も可能です。</span>
       </div>
+      <div class="toolbar">
+        <button class="secondary small-btn" id="copyChatBtn">Google Chat用テキストをコピー</button>
+        <span class="muted">「【ローテーション】」＋「M/D(曜) @氏名 さん」の形式でコピーします（中止回は含みません）</span>
+      </div>
       <table id="scheduleTable">
-        <thead><tr><th style="width:24px;"></th><th>日付</th><th>担当者</th><th>メールアドレス</th><th></th></tr></thead>
+        <thead><tr><th style="width:24px;"></th><th>日付</th><th>担当者</th><th style="width:56px;">回数</th><th>メールアドレス</th><th></th></tr></thead>
         <tbody id="scheduleTbody"></tbody>
       </table>
       <div id="scheduleEmpty" class="empty" style="display:none;">まだスケジュールがありません。左の「スケジュールを生成／再生成」を押してください。</div>
@@ -462,6 +475,7 @@ function fullRegenerate(){
   const seq = buildAssigneeSequence(state.startMemberId, count);
   regenerateFromSeq(seq);
   save();
+  renderMembers();
   renderSchedule();
 }
 
@@ -471,6 +485,7 @@ function recomputeDatesOnly(){
   if(!seq.length) return;
   regenerateFromSeq(seq);
   save();
+  renderMembers();
   renderSchedule();
 }
 
@@ -501,6 +516,7 @@ function markSlotCancelled(slotId, shiftFollowing){
   regenerateFromSeq(seq);
   save();
   renderCancelRanges();
+  renderMembers();
   renderSchedule();
 }
 
@@ -532,6 +548,7 @@ function appendWeeks(n){
   state.weeksCount = activeSlots().length;
   document.getElementById('weeksCountInput').value = state.weeksCount;
   save();
+  renderMembers();
   renderSchedule();
 }
 
@@ -579,6 +596,11 @@ function renderMembers(){
     emailInput.addEventListener('change', () => { m.email = emailInput.value; save(); renderSchedule(); });
     tdEmail.appendChild(emailInput);
 
+    const tdAssigned = document.createElement('td');
+    tdAssigned.className = 'muted';
+    const assignedDates = activeSlots().filter(a => a.memberId === m.id).map(a => a.date);
+    tdAssigned.textContent = assignedDates.length ? assignedDates.map(fmtDisplay).join('、') : '-';
+
     const tdDel = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.className = 'danger small-btn';
@@ -586,7 +608,7 @@ function renderMembers(){
     delBtn.addEventListener('click', () => requestDeleteMember(m.id));
     tdDel.appendChild(delBtn);
 
-    tr.appendChild(tdName); tr.appendChild(tdEmail); tr.appendChild(tdDel);
+    tr.appendChild(tdName); tr.appendChild(tdEmail); tr.appendChild(tdAssigned); tr.appendChild(tdDel);
     tbody.appendChild(tr);
   });
   document.getElementById('memberCount').textContent = state.members.length;
@@ -675,7 +697,7 @@ function renderSchedule(){
       tr.appendChild(tdDate);
 
       const tdInfo = document.createElement('td');
-      tdInfo.colSpan = 2;
+      tdInfo.colSpan = 3;
       tdInfo.textContent = slot.reason || '朝会中止';
       tr.appendChild(tdInfo);
 
@@ -716,6 +738,7 @@ function renderSchedule(){
       state.assignments[to].memberId = tmp;
       dragSrcIndex = null;
       save();
+      renderMembers();
       renderSchedule();
     });
 
@@ -744,10 +767,17 @@ function renderSchedule(){
     sel.addEventListener('change', () => {
       slot.memberId = sel.value;
       save();
+      renderMembers();
       renderSchedule();
     });
     tdMember.appendChild(sel);
     tr.appendChild(tdMember);
+
+    const tdCount = document.createElement('td');
+    tdCount.className = 'muted';
+    const assignedCount = activeSlots().filter(a => a.memberId === slot.memberId).length;
+    tdCount.textContent = `${assignedCount}回`;
+    tr.appendChild(tdCount);
 
     const tdEmail = document.createElement('td');
     const mem = memberById(slot.memberId);
@@ -839,6 +869,46 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+/* ---------- Google Chat用テキスト生成・コピー ---------- */
+function buildChatRotationText(){
+  const lines = ['【ローテーション】'];
+  activeSlots().forEach(slot => {
+    const d = parseDate(slot.date);
+    const md = `${d.getMonth()+1}/${d.getDate()}`;
+    const mem = memberById(slot.memberId);
+    lines.push(`${md}(${WEEKDAY_JP[d.getDay()]}) @${mem ? mem.name : '（未設定）'} さん`);
+  });
+  return lines.join('\n');
+}
+
+function copyTextToClipboard(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(
+      () => alert('コピーしました。Google Chatに貼り付けてください。'),
+      () => copyTextViaTextarea(text)
+    );
+  } else {
+    copyTextViaTextarea(text);
+  }
+}
+// クリップボードAPIが使えない環境（file://での実行など）向けの代替コピー処理
+function copyTextViaTextarea(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try{
+    document.execCommand('copy');
+    alert('コピーしました。Google Chatに貼り付けてください。');
+  }catch(e){
+    alert('自動コピーに失敗しました。以下のテキストを手動で選択してコピーしてください。\n\n' + text);
+  }
+  document.body.removeChild(ta);
+}
+
 function renderAll(){
   document.getElementById('baseDateInput').value = state.baseDate;
   document.getElementById('weeksCountInput').value = state.weeksCount;
@@ -925,6 +995,11 @@ document.getElementById('deleteMemberShift').addEventListener('click', () => {
 document.getElementById('deleteMemberNoShift').addEventListener('click', () => {
   if(deleteTargetMemberId) performDeleteMember(deleteTargetMemberId, false);
   closeDeleteMemberModal();
+});
+
+document.getElementById('copyChatBtn').addEventListener('click', () => {
+  if(!activeSlots().length){ alert('コピーできるスケジュールがありません。'); return; }
+  copyTextToClipboard(buildChatRotationText());
 });
 
 /* ---------- 初期化 ---------- */
