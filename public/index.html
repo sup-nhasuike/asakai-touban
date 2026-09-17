@@ -17,7 +17,14 @@
     font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
     font-size:14px; line-height:1.6;
   }
-  h1{font-size:22px; margin:0 0 4px;}
+  .page-header{margin-bottom:4px;}
+  h1{
+    font-size:28px; margin:0; font-weight:800; letter-spacing:.02em; display:inline-flex; align-items:center; gap:10px;
+    background:linear-gradient(90deg, var(--accent-dark), var(--accent) 60%, #7aa6ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  h1 .h1-icon{-webkit-text-fill-color:initial; filter:none;}
+  .header-rule{height:4px; width:64px; margin:10px 0 18px; border-radius:4px; background:linear-gradient(90deg, var(--accent-dark), #7aa6ff);}
   h2{font-size:16px; margin:0 0 12px; border-left:4px solid var(--accent); padding-left:8px;}
   .lead{color:var(--sub); margin:0 0 20px;}
   .layout{display:grid; grid-template-columns:420px 1fr; gap:20px; align-items:start;}
@@ -124,7 +131,10 @@
 </head>
 <body>
 
-<h1>朝会議事録当番決め</h1>
+<div class="page-header">
+  <h1><span class="h1-icon">📋</span>朝会議事録当番決め</h1>
+</div>
+<div class="header-rule"></div>
 <p class="lead">毎週月曜（祝日の場合は翌日）に議事録担当者を自動で割り当てます。中止期間を設定すると、それ以降の担当は自動的に先送りされます。</p>
 
 <div class="note-box">
