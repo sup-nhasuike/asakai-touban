@@ -76,7 +76,10 @@
   .note-box{background:#fff8e6; border:1px solid #f2dca0; color:#7a5b00; border-radius:8px; padding:10px 12px; font-size:12.5px; margin-bottom:20px;}
   .add-form{display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin-top:8px;}
   .add-form .field{min-width:110px;}
-  .count-badge{font-size:11px; color:var(--sub);}
+  .badge.count-1, .badge.count-2, .badge.count-3plus{margin-left:0; font-weight:600;}
+  .badge.count-1{background:#e6f4ea; color:#1e7a34;}
+  .badge.count-2{background:#fff3cd; color:#8a5a00;}
+  .badge.count-3plus{background:#fde2e1; color:#a33a34;}
   .empty{color:var(--sub); font-size:13px; padding:12px 0;}
   .modal-overlay{position:fixed; inset:0; background:rgba(20,24,34,.45); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
   .modal-box{background:#fff; border-radius:10px; padding:20px; width:min(440px,100%); box-shadow:0 12px 34px rgba(0,0,0,.25);}
@@ -838,9 +841,11 @@ function renderSchedule(){
     tr.appendChild(tdMember);
 
     const tdCount = document.createElement('td');
-    tdCount.className = 'muted';
     const assignedCount = activeSlots().filter(a => a.memberId === slot.memberId).length;
-    tdCount.textContent = `${assignedCount}回`;
+    const countBadge = document.createElement('span');
+    countBadge.className = `badge count-${assignedCount >= 3 ? '3plus' : assignedCount}`;
+    countBadge.textContent = `${assignedCount}回`;
+    tdCount.appendChild(countBadge);
     tr.appendChild(tdCount);
 
     const tdEmail = document.createElement('td');
