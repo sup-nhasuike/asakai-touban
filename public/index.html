@@ -32,6 +32,9 @@
   .layout > div{min-width:0; overflow-x:hidden;}
   @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
   .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;}
+  /* 一番よく見る「朝会議事録当番スケジュール」を目立たせる */
+  .card-featured{border:2px solid var(--accent); box-shadow:0 6px 18px rgba(59,108,246,.16);}
+  .card-featured h2{border-left-color:var(--accent-dark);}
   .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
   label{font-size:12px; color:var(--sub); display:block; margin-bottom:4px;}
   input[type=date], input[type=text], input[type=number], input[type=email], select{
@@ -248,7 +251,7 @@
   </div>
 
   <div>
-    <div class="card">
+    <div class="card card-featured">
       <h2>朝会議事録当番スケジュール</h2>
       <div class="toolbar">
         <span class="muted">行をドラッグ＆ドロップすると担当者を入れ替えられます。プルダウンからの直接変更も可能です。</span>
