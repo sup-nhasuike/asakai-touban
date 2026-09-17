@@ -76,8 +76,9 @@
   @media (max-width:480px){
     #scheduleTable{min-width:450px;}
     #scheduleTable .col-email{display:none;}
-    #scheduleTable .col-member{width:180px;}
+    #scheduleTable .col-member{width:170px;}
   }
+  #scheduleTable button{white-space:nowrap;}
   #scheduleTable tr.dragging{opacity:.4;}
   #scheduleTable tr.dragover{background:var(--hover);}
   .badge{display:inline-block; font-size:11px; padding:1px 6px; border-radius:10px; margin-left:6px;}
@@ -787,6 +788,7 @@ function renderSchedule(){
       tr.appendChild(tdInfo);
 
       const tdAction = document.createElement('td');
+      tdAction.className = 'col-action';
       const restoreBtn = document.createElement('button');
       restoreBtn.className = 'secondary small-btn';
       restoreBtn.textContent = '取り消す';
@@ -873,6 +875,7 @@ function renderSchedule(){
     tr.appendChild(tdEmail);
 
     const tdDel = document.createElement('td');
+    tdDel.className = 'col-action';
     const delBtn = document.createElement('button');
     delBtn.className = 'secondary small-btn';
     delBtn.textContent = 'この回を中止にする';
