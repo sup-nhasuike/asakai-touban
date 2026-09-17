@@ -54,7 +54,7 @@
   #memberTable button{white-space:nowrap;}
   #memberTable td, #memberTable th{overflow:hidden;}
   #memberTable input{text-overflow:ellipsis;}
-  #cancelTable{table-layout:fixed;}
+  #cancelTable{table-layout:fixed; min-width:0; width:100%;}
   #cancelTable button{white-space:nowrap;}
   .small-btn{padding:4px 8px; font-size:12px;}
   .muted{color:var(--sub); font-size:12px;}
@@ -167,8 +167,8 @@
       <div class="table-scroll">
         <table id="cancelTable">
           <thead><tr>
-            <th style="width:64px;">開始日</th>
-            <th style="width:64px;">終了日</th>
+            <th style="width:78px;">開始日</th>
+            <th style="width:78px;">終了日</th>
             <th>理由</th>
             <th style="width:56px;"></th>
           </tr></thead>
