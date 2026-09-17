@@ -54,6 +54,8 @@
   #memberTable button{white-space:nowrap;}
   #memberTable td, #memberTable th{overflow:hidden;}
   #memberTable input{text-overflow:ellipsis;}
+  #cancelTable{table-layout:fixed;}
+  #cancelTable button{white-space:nowrap;}
   .small-btn{padding:4px 8px; font-size:12px;}
   .muted{color:var(--sub); font-size:12px;}
   #scheduleTable tr{cursor:grab;}
@@ -163,8 +165,13 @@
       <h2>朝会中止設定</h2>
       <p class="muted">お盆・GW・年末年始など、期間を指定して朝会を中止できます。設定すると以降の担当日程が自動で先送りされます。</p>
       <div class="table-scroll">
-        <table>
-          <thead><tr><th>開始日</th><th>終了日</th><th>理由</th><th></th></tr></thead>
+        <table id="cancelTable">
+          <thead><tr>
+            <th style="width:64px;">開始日</th>
+            <th style="width:64px;">終了日</th>
+            <th>理由</th>
+            <th style="width:56px;"></th>
+          </tr></thead>
           <tbody id="cancelTbody"></tbody>
         </table>
       </div>
@@ -278,10 +285,14 @@ function fmtDisplay(dateStr){
   const d = parseDate(dateStr);
   return `${dateStr}（${WEEKDAY_JP[d.getDay()]}）`;
 }
+// 開始日・終了日など、曜日までは不要な欄向けの短い日付表記（例: 26-10-13）
+function fmtShortDate(dateStr){
+  return dateStr.slice(2); // "2026-10-13" -> "26-10-13"
+}
 // 担当者一覧など、幅の狭い欄向けの短い日付表記（例: 26-10-13(火)）
 function fmtShortDisplay(dateStr){
   const d = parseDate(dateStr);
-  const shortDate = dateStr.slice(2); // "2026-10-13" -> "26-10-13"
+  const shortDate = fmtShortDate(dateStr);
   return `${shortDate}(${WEEKDAY_JP[d.getDay()]})`;
 }
 function uid(){
@@ -675,7 +686,7 @@ function renderCancelRanges(){
   }
   state.cancelRanges.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.start}</td><td>${r.end}</td><td>${escapeHtml(r.reason || '')}</td>`;
+    tr.innerHTML = `<td>${fmtShortDate(r.start)}</td><td>${fmtShortDate(r.end)}</td><td>${escapeHtml(r.reason || '')}</td>`;
     const tdDel = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.className = 'danger small-btn';
