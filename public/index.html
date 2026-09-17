@@ -43,7 +43,13 @@
   button.danger:hover{background:#fbdada; color:var(--danger-dark);}
   table{width:100%; border-collapse:collapse; font-size:13px;}
   /* スマホ幅では列が狭くなりすぎるので、表だけ横スクロールできるようにする */
-  .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:8px;}
+  .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:8px; position:relative;}
+  /* 表がまだ右に続いている（横スクロールできる）ことに気づけるよう、右端に薄い影を出す */
+  .table-scroll::after{
+    content:''; position:absolute; top:0; right:0; bottom:8px; width:20px;
+    background:linear-gradient(to right, rgba(244,246,250,0), rgba(31,41,55,.12));
+    pointer-events:none;
+  }
   .table-scroll table{min-width:520px;}
   @media (max-width:480px){
     body{padding:12px;}
