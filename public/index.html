@@ -47,6 +47,10 @@
     body{padding:12px;}
     .card{padding:12px;}
   }
+  /* スマホ等、マウスでホバーする操作ができない端末では、ホバー前提の説明文を隠す */
+  @media (hover:none){
+    .hover-hint{display:none;}
+  }
   th,td{padding:6px 6px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle;}
   th{color:var(--sub); font-weight:600; font-size:12px;}
   .member-row input{width:100%;}
@@ -210,7 +214,7 @@
         <span class="muted">行をドラッグ＆ドロップすると担当者を入れ替えられます。プルダウンからの直接変更も可能です。</span>
       </div>
       <div class="toolbar">
-        <span class="muted">日付の横の<span class="badge shift">※</span>は、祝日のため翌日に実施することを表します（マウスを乗せると詳細が表示されます）。</span>
+        <span class="muted">日付の横の<span class="badge shift">※</span>は、祝日のため翌日に実施することを表します。<span class="hover-hint">（マウスを乗せると詳細が表示されます）</span></span>
       </div>
       <div class="toolbar">
         <button class="secondary small-btn" id="copyChatBtn">Google Chat用テキストをコピー</button>
