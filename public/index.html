@@ -31,8 +31,9 @@
     padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:13px;
     background:#fff; color:var(--text); width:100%;
   }
-  .field{flex:1; min-width:120px; max-width:100%; overflow:hidden;}
-  input[type=date]{min-width:0;}
+  .field{flex:1; min-width:120px; max-width:100%;}
+  /* 日付欄は伸縮させず幅を固定し、隣の項目との重なりや枠線の欠けを防ぐ */
+  .field:has(input[type=date]){flex:0 1 150px;}
   button{
     cursor:pointer; border:none; border-radius:6px; padding:7px 12px; font-size:13px;
     background:var(--accent); color:#fff; transition:background .15s;
@@ -45,13 +46,15 @@
   table{width:100%; border-collapse:collapse; font-size:13px;}
   /* スマホ幅では列が狭くなりすぎるので、表だけ横スクロールできるようにする */
   .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:8px; position:relative;}
-  /* 表がまだ右に続いている（横スクロールできる）ことに気づけるよう、右端に薄い影を出す */
-  .table-scroll::after{
-    content:''; position:absolute; top:0; right:0; bottom:8px; width:20px;
-    background:linear-gradient(to right, rgba(244,246,250,0), rgba(31,41,55,.12));
-    pointer-events:none;
+  /* 表がまだ右に続いている（横スクロールできる）ことに気づけるよう、スマホ幅でのみ右端に薄い影を出す */
+  @media (max-width:480px){
+    .table-scroll::after{
+      content:''; position:absolute; top:0; right:0; bottom:8px; width:20px;
+      background:linear-gradient(to right, rgba(244,246,250,0), rgba(31,41,55,.12));
+      pointer-events:none;
+    }
+    .table-scroll.no-scroll-hint::after{content:none;}
   }
-  .table-scroll.no-scroll-hint::after{content:none;}
   .table-scroll table{min-width:520px;}
   @media (max-width:480px){
     body{padding:12px;}
