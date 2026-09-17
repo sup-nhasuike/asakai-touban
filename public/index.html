@@ -50,6 +50,7 @@
     background:linear-gradient(to right, rgba(244,246,250,0), rgba(31,41,55,.12));
     pointer-events:none;
   }
+  .table-scroll.no-scroll-hint::after{content:none;}
   .table-scroll table{min-width:520px;}
   @media (max-width:480px){
     body{padding:12px;}
@@ -193,7 +194,7 @@
     <div class="card">
       <h2>朝会中止設定</h2>
       <p class="muted">お盆・GW・年末年始など、期間を指定して朝会を中止できます。設定すると以降の担当日程が自動で先送りされます。</p>
-      <div class="table-scroll">
+      <div class="table-scroll no-scroll-hint">
         <table id="cancelTable">
           <thead><tr>
             <th style="width:78px;">開始日</th>
