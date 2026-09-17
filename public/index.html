@@ -104,6 +104,8 @@
   .note-box{background:#fff8e6; border:1px solid #f2dca0; color:#7a5b00; border-radius:8px; padding:10px 12px; font-size:12.5px; margin-bottom:20px;}
   .add-form{display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin-top:8px;}
   .add-form .field{min-width:110px;}
+  /* 日付欄は横に伸びすぎて隣の欄と重ならないよう、幅を抑える */
+  .add-form .field:has(input[type=date]){flex:0 1 140px; min-width:120px;}
   .badge.count-1, .badge.count-2, .badge.count-3plus{margin-left:0; font-weight:600;}
   .badge.count-1{background:#e6f4ea; color:#1e7a34;}
   .badge.count-2{background:#fff3cd; color:#8a5a00;}
