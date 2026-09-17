@@ -754,7 +754,7 @@ function renderSchedule(){
       tr.appendChild(tdHandle);
 
       const tdDate = document.createElement('td');
-      tdDate.innerHTML = `${fmtDisplay(slot.date)}<span class="badge cancel">中止</span>`;
+      tdDate.innerHTML = `${fmtShortDisplay(slot.date)}<span class="badge cancel">中止</span>`;
       tr.appendChild(tdDate);
 
       const tdInfo = document.createElement('td');
@@ -809,7 +809,7 @@ function renderSchedule(){
     tr.appendChild(tdHandle);
 
     const tdDate = document.createElement('td');
-    let dateHtml = fmtDisplay(slot.date);
+    let dateHtml = fmtShortDisplay(slot.date);
     if(slot.shifted){
       dateHtml += `<span class="badge shift" title="${escapeHtml(slot.holidayName||'')}の振替">祝日のため翌日実施</span>`;
     }
