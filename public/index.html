@@ -74,15 +74,16 @@
   #scheduleTable .col-action{width:100px;}
   /* スマホ幅では、メールアドレスより担当者名を優先し、メール列は非表示にして幅を譲る */
   @media (max-width:480px){
-    #scheduleTable{min-width:450px;}
+    #scheduleTable{min-width:480px;}
     #scheduleTable .col-email{display:none;}
-    #scheduleTable .col-member{width:170px;}
+    #scheduleTable .col-date{width:120px;}
+    #scheduleTable .col-member{width:180px;}
   }
   #scheduleTable button{white-space:nowrap;}
   #scheduleTable tr.dragging{opacity:.4;}
   #scheduleTable tr.dragover{background:var(--hover);}
   .badge{display:inline-block; font-size:11px; padding:1px 6px; border-radius:10px; margin-left:6px;}
-  .badge.shift{background:none; color:#8a5a00; padding:0; margin-left:2px; border-radius:0; font-weight:700;}
+  .badge.shift{background:none; color:#8a5a00; padding:0; margin-left:2px; border-radius:0; font-weight:600;}
   .badge.weekday{background:#eef1f7; color:var(--sub); margin-left:8px;}
   .drag-handle{cursor:grab; color:var(--sub); padding-right:4px; user-select:none;}
   .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
