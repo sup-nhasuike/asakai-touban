@@ -784,15 +784,20 @@ function renderSchedule(){
       tr.appendChild(tdDate);
 
       const tdInfo = document.createElement('td');
-      tdInfo.colSpan = 3;
+      tdInfo.colSpan = 2;
       tdInfo.textContent = slot.reason || '朝会中止';
       tr.appendChild(tdInfo);
+
+      // メールアドレス列と列数を揃えるための空セル（スマホでは他の行同様に非表示になる）
+      const tdEmailPlaceholder = document.createElement('td');
+      tdEmailPlaceholder.className = 'col-email';
+      tr.appendChild(tdEmailPlaceholder);
 
       const tdAction = document.createElement('td');
       tdAction.className = 'col-action';
       const restoreBtn = document.createElement('button');
       restoreBtn.className = 'secondary small-btn';
-      restoreBtn.textContent = '取り消す';
+      restoreBtn.textContent = '中止を取消す';
       restoreBtn.addEventListener('click', () => restoreCancelledDate(slot.date));
       tdAction.appendChild(restoreBtn);
       tr.appendChild(tdAction);
@@ -879,7 +884,7 @@ function renderSchedule(){
     tdDel.className = 'col-action';
     const delBtn = document.createElement('button');
     delBtn.className = 'secondary small-btn';
-    delBtn.textContent = 'この回を中止にする';
+    delBtn.textContent = 'この回を中止';
     delBtn.addEventListener('click', () => openCancelModal(slot.id));
     tdDel.appendChild(delBtn);
     tr.appendChild(tdDel);
