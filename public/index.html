@@ -143,7 +143,7 @@
         <table id="memberTable">
           <thead><tr>
             <th style="width:28px;">No.</th>
-            <th style="width:34%;">氏名</th>
+            <th style="width:23%;">氏名</th>
             <th style="width:17%;">メールアドレス</th>
             <th>割当日</th>
             <th style="width:44px;"></th>
@@ -276,6 +276,12 @@ function addDays(d, n){
 function fmtDisplay(dateStr){
   const d = parseDate(dateStr);
   return `${dateStr}（${WEEKDAY_JP[d.getDay()]}）`;
+}
+// 担当者一覧など、幅の狭い欄向けの短い日付表記（例: 26-10-13(火)）
+function fmtShortDisplay(dateStr){
+  const d = parseDate(dateStr);
+  const shortDate = dateStr.slice(2); // "2026-10-13" -> "26-10-13"
+  return `${shortDate}(${WEEKDAY_JP[d.getDay()]})`;
 }
 function uid(){
   return 'id_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
@@ -642,7 +648,7 @@ function renderMembers(){
     const tdAssigned = document.createElement('td');
     tdAssigned.className = 'muted';
     const assignedDates = activeSlots().filter(a => a.memberId === m.id).map(a => a.date);
-    tdAssigned.textContent = assignedDates.length ? assignedDates.map(fmtDisplay).join('、') : '-';
+    tdAssigned.textContent = assignedDates.length ? assignedDates.map(fmtShortDisplay).join('、') : '-';
 
     const tdDel = document.createElement('td');
     const delBtn = document.createElement('button');
