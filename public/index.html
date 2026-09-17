@@ -66,6 +66,18 @@
   .muted{color:var(--sub); font-size:12px;}
   #scheduleTable tr{cursor:grab;}
   #scheduleTable{table-layout:fixed; width:auto; min-width:498px; max-width:100%;}
+  #scheduleTable .col-handle{width:24px;}
+  #scheduleTable .col-date{width:110px;}
+  #scheduleTable .col-member{width:130px;}
+  #scheduleTable .col-count{width:56px;}
+  #scheduleTable .col-email{width:78px;}
+  #scheduleTable .col-action{width:100px;}
+  /* スマホ幅では、メールアドレスより担当者名を優先し、メール列は非表示にして幅を譲る */
+  @media (max-width:480px){
+    #scheduleTable{min-width:450px;}
+    #scheduleTable .col-email{display:none;}
+    #scheduleTable .col-member{width:180px;}
+  }
   #scheduleTable tr.dragging{opacity:.4;}
   #scheduleTable tr.dragover{background:var(--hover);}
   .badge{display:inline-block; font-size:11px; padding:1px 6px; border-radius:10px; margin-left:6px;}
@@ -225,12 +237,12 @@
       <div class="table-scroll">
         <table id="scheduleTable">
           <thead><tr>
-            <th style="width:24px;"></th>
-            <th style="width:110px;">日付</th>
-            <th style="width:130px;">担当者</th>
-            <th style="width:56px;">回数</th>
-            <th style="width:78px;">メールアドレス</th>
-            <th style="width:100px;"></th>
+            <th class="col-handle"></th>
+            <th class="col-date">日付</th>
+            <th class="col-member">担当者</th>
+            <th class="col-count">回数</th>
+            <th class="col-email">メールアドレス</th>
+            <th class="col-action"></th>
           </tr></thead>
           <tbody id="scheduleTbody"></tbody>
         </table>
@@ -857,7 +869,7 @@ function renderSchedule(){
     const tdEmail = document.createElement('td');
     const mem = memberById(slot.memberId);
     tdEmail.textContent = mem ? (mem.email || '') : '';
-    tdEmail.className = 'muted';
+    tdEmail.className = 'muted col-email';
     tr.appendChild(tdEmail);
 
     const tdDel = document.createElement('td');
