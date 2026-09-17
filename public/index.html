@@ -21,6 +21,8 @@
   h2{font-size:16px; margin:0 0 12px; border-left:4px solid var(--accent); padding-left:8px;}
   .lead{color:var(--sub); margin:0 0 20px;}
   .layout{display:grid; grid-template-columns:420px 1fr; gap:20px; align-items:start;}
+  /* グリッドの列は、中の表などが広くても画面幅を超えて伸びないようにする（CSSグリッドの既定挙動対策） */
+  .layout > div{min-width:0;}
   @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
   .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;}
   .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
